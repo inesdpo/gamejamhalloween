@@ -24,6 +24,7 @@ public class PlayerHealth : MonoBehaviour
     void Start()
     {
         currentHealth = maxHealth;
+        hurtImage.enabled = false;
     }
 
     IEnumerator HurtFlash()
