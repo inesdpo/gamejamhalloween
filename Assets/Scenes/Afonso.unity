@@ -1555,6 +1555,120 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1742840009
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 8026176340731347517, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+      propertyPath: m_Name
+      value: Enemy (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8988219174233101337, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -23.987469
+      objectReference: {fileID: 0}
+    - target: {fileID: 8988219174233101337, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.23
+      objectReference: {fileID: 0}
+    - target: {fileID: 8988219174233101337, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.22
+      objectReference: {fileID: 0}
+    - target: {fileID: 8988219174233101337, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.28288904
+      objectReference: {fileID: 0}
+    - target: {fileID: 8988219174233101337, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8988219174233101337, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.95915264
+      objectReference: {fileID: 0}
+    - target: {fileID: 8988219174233101337, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8988219174233101337, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8988219174233101337, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 147.135
+      objectReference: {fileID: 0}
+    - target: {fileID: 8988219174233101337, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 5600763656794431185, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8026176340731347517, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1742840012}
+    - targetCorrespondingSourceObject: {fileID: 8026176340731347517, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1742840011}
+  m_SourcePrefab: {fileID: 100100000, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+--- !u!1 &1742840010 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8026176340731347517, guid: afc6e0cd526f05f4b83f9896c98270bd, type: 3}
+  m_PrefabInstance: {fileID: 1742840009}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1742840011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1742840010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86c366139cfac764bb546bbf32d3bd6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  triggerDistance: 15
+  fleeSpeed: 10
+  maxFleeTime: 5
+  chaseFleeDuration: 10
+  chaseTimerSpeed: 18
+  chaseFleeTriggerTime: 3
+  wanderCooldown: 3
+  movementConeAngle: 90
+  timeBeforeChaseInMinutes: 10
+  chaseTimerDuration: 100
+  roarClip: {fileID: 0}
+  chaseStartClip: {fileID: 0}
+  roarCooldown: 20
+  roarMinDelay: 5
+  roarMaxDelay: 15
+  lurkCooldownMin: 20
+  lurkCooldownMax: 40
+  lurkDistanceFromPlayer: 20
+  lurkDuration: 5
+--- !u!114 &1742840012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1742840010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd9f652fc212cc44dbd0d34c03a75744, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damageAmount: 10
 --- !u!1 &2026860013 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4459864851310106424, guid: 6bacecc4f3df9584198879c73a6b6c36, type: 3}
@@ -1663,3 +1777,4 @@ SceneRoots:
   - {fileID: 1719552245}
   - {fileID: 2096586596}
   - {fileID: 271943338}
+  - {fileID: 1742840009}
