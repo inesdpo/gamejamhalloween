@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Health : MonoBehaviour
+public class PlayerHealth : MonoBehaviour
 {
     [Header("Player Health Amount")]
     public float currentHealth;
@@ -19,12 +19,12 @@ public class Health : MonoBehaviour
     [SerializeField] private float healCooldown = 3.0f;
     [SerializeField] private float maxHealCooldown = 3.0f;
     [SerializeField] private bool startCooldown = false;
-    [SerializeField] private float damage = 10.0f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         currentHealth = maxHealth;
+        hurtImage.enabled = false;
     }
 
     IEnumerator HurtFlash()
@@ -34,10 +34,11 @@ public class Health : MonoBehaviour
         hurtImage.enabled = false;
     }
 
-    public void TakeDamage()
+    public void TakeDamage(float damage)
     {
         if (currentHealth >= 0)
         {
+            currentHealth -= damage;
             canRegen = false;
             StartCoroutine(HurtFlash());
             UpdateHealth();
@@ -76,13 +77,6 @@ public class Health : MonoBehaviour
                 healCooldown = maxHealCooldown;
                 canRegen=false;
             }
-        }
-    }
-    private void OnTriggerEnter(Collider other)
-    {
-        if(other.CompareTag("Player"))
-        {
-            currentHealth -= damage;
         }
     }
 }
