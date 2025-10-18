@@ -3,14 +3,21 @@ using UnityEngine;
 public class TotemCount : MonoBehaviour
 {
     [SerializeField] private GameObject[] totems;
-    [SerializeField] private float totemCount;
+    [SerializeField] private int totemCount;
 
-    private void Update()
+    private void Start()
+    {
+        CountTotems();
+    }
+
+    private void CountTotems()
     {
        foreach (GameObject totem in totems)
         {
-            totem.SetActive(false);
-            totemCount++;
+            if (totem.activeSelf)
+            {
+                totemCount++;
+            }
         }
     }
 }
