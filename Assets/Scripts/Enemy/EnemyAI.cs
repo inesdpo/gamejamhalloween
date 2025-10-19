@@ -2,177 +2,212 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.SceneManagement;
 
 public class EnemyAI : MonoBehaviour
 {
-    // Reference to the NavMeshAgent that controls enemy movement
+    [Header("References")]
     public NavMeshAgent ai;
-
-    // List of random patrol destinations the enemy can walk to
-    public List<Transform> destinations;
-
-    // Animator used to control enemy animations
-    public Animator aiAnim;
-
-    // Movement speeds and time settings
-    public float walkSpeed, chaseSpeed;
-    public float minIdleTime, maxIdleTime; // Random idle duration range
-    public float idleTime;                 // Chosen idle duration
-    public float sightDistance;            // How far the enemy can "see" the player
-    public float catchDistance;            // Distance needed to catch the player
-    public float chaseTime;                // How long the chase lasts
-    public float minChaseTime, maxChaseTime;
-    public float jumscareTime;             // Delay before loading death scene after jumpscare
-
-    // State booleans
-    public bool walking, chasing;
-
-    // Reference to the player transform
     public Transform player;
+    private PlayerHealth playerHealth;
 
-    // Internal tracking of destinations
+    [Header("Patrol")]
+    public List<Transform> destinations;
+    public float walkSpeed = 2f;
+    public float chaseSpeed = 4f;
+    public float minIdleTime = 2f;
+    public float maxIdleTime = 5f;
+
+    [Header("Chase Settings")]
+    public float minChaseTime = 5f;
+    public float maxChaseTime = 10f;
+    public float sightDistance = 15f;
+    public float catchDistance = 2f;
+    public Vector3 raycastOffset = Vector3.up;
+
+    [Header("Combat")]
+    public float damageAmount = 10f;
+    public float attackPauseTime = 5f;
+
+    private bool walking = true;
+    private bool chasing = false;
+    private bool canMove = true;
+    private bool hasDealtDamage = false;
+    private bool isIdle = false;
+
     private Transform currentDest;
-    private Vector3 dest;
-    private int randNum, randNum2;
-    public int destinationAmount;
-
-    // Raycast offset to make the enemy's vision start from a specific point (e.g., eyes)
-    public Vector3 raycastOffet;
-
-    // Name of the scene to load when the player dies
-    public string deathScene;
+    private Coroutine chaseRoutine;
+    private Coroutine idleRoutine;
 
     void Start()
     {
-        // Start in walking mode and pick a random destination
-        walking = true;
-        randNum = Random.Range(0, destinationAmount);
-        currentDest = destinations[randNum];
+        if (player != null)
+            playerHealth = player.GetComponent<PlayerHealth>();
+
+        PickNewDestination();
+        Debug.Log("[EnemyAI] State: START, now Walking");
     }
 
     void Update()
     {
-        // Calculate direction from enemy to player
-        Vector3 direction = (player.position - transform.position).normalized;
-        RaycastHit hit;
+        if (!canMove) return;
 
-        // Cast a ray toward the player to check if the enemy sees them
-        if (Physics.Raycast(transform.position + raycastOffet, direction, out hit, sightDistance))
+        bool playerVisible = CanSeePlayer();
+
+        // --- CHASE START ---
+        if (playerVisible && !chasing)
         {
-            // If the ray hits the player, start chasing
-            if (hit.collider.gameObject.tag == "Player")
-            {
-                walking = false;
+            // Forcefully reset all coroutines and states
+            ResetAllCoroutines();
 
-                // Stop other routines to avoid conflicts
-                StopCoroutine("stayIdle");
-                StopCoroutine("chaseRoutine");
+            chasing = true;
+            walking = false;
+            isIdle = false;
+            ai.isStopped = false;
 
-                // Start chasing behavior
-                StartCoroutine("chaseRoutine");
-
-                // Change animation to sprint
-                aiAnim.ResetTrigger("walk");
-                aiAnim.ResetTrigger("idle");
-                aiAnim.SetTrigger("sprint");
-
-                chasing = true;
-            }
+            chaseRoutine = StartCoroutine(ChaseRoutine());
+            Debug.Log("[EnemyAI] State: Player spotted, now Chasing (forced resume)");
         }
 
         // --- CHASING BEHAVIOR ---
-        if (chasing == true)
+        if (chasing && canMove)
         {
-            // Move toward the player's current position
-            dest = player.position;
-            ai.destination = dest;
             ai.speed = chaseSpeed;
+            ai.destination = player.position;
 
-            // If close enough, catch the player
-            if (ai.remainingDistance <= catchDistance)
+            if (!hasDealtDamage && ai.remainingDistance <= catchDistance)
             {
-                // Disable player and play jumpscare animation
-                player.gameObject.SetActive(false);
-                aiAnim.ResetTrigger("sprint");
-                aiAnim.SetTrigger("jumpscare");
-
-                // Start death sequence
-                StartCoroutine(deathRoutine());
-                chasing = false;
+                StartCoroutine(AttackPlayer());
             }
         }
 
-        // --- WALKING / PATROLLING BEHAVIOR ---
-        if (walking)
+        // --- PATROLLING BEHAVIOR ---
+        if (walking && canMove)
         {
-            // Move toward current patrol destination
-            dest = currentDest.position;
-            ai.destination = dest;
             ai.speed = walkSpeed;
+            ai.destination = currentDest.position;
 
-            // If reached destination...
-            if (ai.remainingDistance <= ai.stoppingDistance)
+            if (ai.remainingDistance <= ai.stoppingDistance && !isIdle)
             {
-                // Randomly choose between walking again or idling
-                randNum2 = Random.Range(0, 2);
-
-                if (randNum2 == 0)
+                if (Random.value < 0.5f)
                 {
-                    // Pick a new random destination and continue walking
-                    randNum = Random.Range(0, destinationAmount);
-                    currentDest = destinations[randNum];
+                    PickNewDestination();
+                    Debug.Log("[EnemyAI] State: Walking, now New destination");
                 }
-
-                if (randNum2 == 1)
+                else
                 {
-                    // Stop and idle for a while
-                    aiAnim.ResetTrigger("walk");
-                    aiAnim.SetTrigger("idle");
-                    ai.speed = 0;
-
-                    StartCoroutine("stayIdle");
-                    walking = false;
+                    idleRoutine = StartCoroutine(StayIdle());
                 }
             }
         }
+    }
 
-        // --- COROUTINES ---
-        IEnumerator StayIdle()
+    // --- Vision Check ---
+    bool CanSeePlayer()
+    {
+        if (player == null) return false;
+
+        Vector3 direction = (player.position - transform.position).normalized;
+        if (Physics.Raycast(transform.position + raycastOffset, direction, out RaycastHit hit, sightDistance))
         {
-            // Wait a random amount of time before walking again
-            idleTime = Random.Range(minIdleTime, maxIdleTime);
-            yield return new WaitForSeconds(idleTime);
+            return hit.collider.CompareTag("Player");
+        }
+        return false;
+    }
 
-            walking = true;
-            randNum = Random.Range(0, destinationAmount);
-            currentDest = destinations[randNum];
+    // --- Idle Coroutine ---
+    IEnumerator StayIdle()
+    {
+        isIdle = true;
+        ai.isStopped = true;
 
-            aiAnim.ResetTrigger("idle");
-            aiAnim.SetTrigger("walk");
+        float idleTime = Random.Range(minIdleTime, maxIdleTime);
+        Debug.Log("[EnemyAI] State: Walking, now Idle (" + idleTime + "s)");
+
+        float timer = 0f;
+        while (timer < idleTime)
+        {
+            if (chasing) yield break; // cancel idle immediately if chase starts
+            timer += Time.deltaTime;
+            yield return null;
         }
 
-        IEnumerator chaseRoutine()
-        {
-            // Chase for a random duration
-            chaseTime = Random.Range(minChaseTime, maxChaseTime);
-            yield return new WaitForSeconds(chaseTime);
+        ai.isStopped = false;
+        isIdle = false;
+        walking = true;
+        PickNewDestination();
 
-            // Return to patrol after chase ends
-            walking = true;
+        Debug.Log("[EnemyAI] State: Idle finished, now Walking");
+    }
+
+    // --- Chase Coroutine ---
+    IEnumerator ChaseRoutine()
+    {
+        float chaseTime = Random.Range(minChaseTime, maxChaseTime);
+        float elapsed = 0f;
+
+        while (elapsed < chaseTime)
+        {
+            if (!CanSeePlayer()) break;
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        chasing = false;
+        walking = true;
+        PickNewDestination();
+
+        Debug.Log("[EnemyAI] State: Chase ended, now Walking");
+    }
+
+    // --- Attack Sequence ---
+    IEnumerator AttackPlayer()
+    {
+        hasDealtDamage = true;
+        canMove = false;
+        ai.isStopped = true;
+
+        Debug.Log("[EnemyAI] State: ATTACK, now Pause for " + attackPauseTime + "s");
+
+        if (playerHealth != null)
+            playerHealth.TakeDamage(damageAmount);
+
+        yield return new WaitForSeconds(attackPauseTime);
+
+        ai.isStopped = false;
+        canMove = true;
+        hasDealtDamage = false;
+
+        // Resume correct state depending on visibility
+        if (CanSeePlayer())
+        {
+            chasing = true;
+            walking = false;
+            ResetAllCoroutines();
+            chaseRoutine = StartCoroutine(ChaseRoutine());
+            Debug.Log("[EnemyAI] State: Attack pause over, now Chasing again");
+        }
+        else
+        {
             chasing = false;
-            randNum = Random.Range(0, destinationAmount);
-            currentDest = destinations[randNum];
-
-            aiAnim.ResetTrigger("sprint");
-            aiAnim.SetTrigger("walk");
+            walking = true;
+            PickNewDestination();
+            Debug.Log("[EnemyAI] State: Attack pause over, now Walking");
         }
+    }
 
-        IEnumerator deathRoutine()
-        {
-            // Wait for jumpscare animation, then load death scene
-            yield return new WaitForSeconds(jumscareTime);
-            SceneManager.LoadScene(deathScene);
-        }
+    // --- Reset all coroutines and movement ---
+    private void ResetAllCoroutines()
+    {
+        StopAllCoroutines();
+        isIdle = false;
+        ai.isStopped = false;
+    }
+
+    // --- Pick Random Destination ---
+    void PickNewDestination()
+    {
+        if (destinations == null || destinations.Count == 0) return;
+        currentDest = destinations[Random.Range(0, destinations.Count)];
+        ai.destination = currentDest.position;
     }
 }
