@@ -35,27 +35,32 @@ public class TerrainScanner : MonoBehaviour
             return;
         }
 
-        // Spawn scanner at player position
+        // Spawn visual scanner
         GameObject terrainScanner = Instantiate(
             TerrainScannerPrefab,
             transform.position,
             Quaternion.identity
         );
 
-        // Access the particle system on the prefab
-        ParticleSystem terrainScannerPS = terrainScanner.transform.GetChild(0).GetComponent<ParticleSystem>();
-        if (terrainScannerPS != null)
+        // Spawn invisible detection sphere
+        GameObject wave = new GameObject("EcholocationWave");
+        wave.transform.position = transform.position;
+
+        var waveScript = wave.AddComponent<EcholocationWave>();
+        waveScript.maxRadius = size;      // match your visual pulse size
+        waveScript.lifetime = duration;   // match your pulse duration
+
+
+        // Particle tuning
+        ParticleSystem ps = terrainScanner.transform.GetChild(0).GetComponent<ParticleSystem>();
+        if (ps != null)
         {
-            var main = terrainScannerPS.main;
+            var main = ps.main;
             main.startLifetime = duration;
             main.startSize = size;
         }
-        else
-        {
-            Debug.LogError("Particle System not found on Terrain Scanner Prefab.");
-        }
 
-        // Cleanup
         Destroy(terrainScanner, duration + 1f);
     }
+
 }
