@@ -29,7 +29,7 @@ public class EnemyAI : MonoBehaviour
     public float attackPauseTime = 5f;
 
     private bool walking = true;
-    private bool chasing = false;
+    public bool chasing = false; // made public so external scripts can check
     private bool canMove = true;
     private bool hasDealtDamage = false;
     private bool isIdle = false;
@@ -56,7 +56,7 @@ public class EnemyAI : MonoBehaviour
         // --- CHASE START ---
         if (playerVisible && !chasing)
         {
-            // Forcefully reset all coroutines and states
+            // Reset coroutines/states but avoid killing all coroutines (e.g. attack coroutine)
             ResetAllCoroutines();
 
             chasing = true;
@@ -84,7 +84,8 @@ public class EnemyAI : MonoBehaviour
         if (walking && canMove)
         {
             ai.speed = walkSpeed;
-            ai.destination = currentDest.position;
+            if (currentDest != null)
+                ai.destination = currentDest.position;
 
             if (ai.remainingDistance <= ai.stoppingDistance && !isIdle)
             {
@@ -137,6 +138,7 @@ public class EnemyAI : MonoBehaviour
         PickNewDestination();
 
         Debug.Log("[EnemyAI] State: Idle finished, now Walking");
+        idleRoutine = null;
     }
 
     // --- Chase Coroutine ---
@@ -157,6 +159,7 @@ public class EnemyAI : MonoBehaviour
         PickNewDestination();
 
         Debug.Log("[EnemyAI] State: Chase ended, now Walking");
+        chaseRoutine = null;
     }
 
     // --- Attack Sequence ---
@@ -195,12 +198,51 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    // --- Reset all coroutines and movement ---
+    // --- Reset all coroutines and movement (safer) ---
     private void ResetAllCoroutines()
     {
-        StopAllCoroutines();
+        if (chaseRoutine != null)
+        {
+            StopCoroutine(chaseRoutine);
+            chaseRoutine = null;
+        }
+        if (idleRoutine != null)
+        {
+            StopCoroutine(idleRoutine);
+            idleRoutine = null;
+        }
+        // intentionally don't StopAllCoroutines() to avoid killing Attack coroutine, etc.
         isIdle = false;
         ai.isStopped = false;
+    }
+
+    // --- Public stopChase for external callers (e.g. HidingPlace) ---
+    public void stopChase()
+    {
+        // Stop chase coroutine if running
+        if (chaseRoutine != null)
+        {
+            StopCoroutine(chaseRoutine);
+            chaseRoutine = null;
+        }
+
+        // Cancel idle as well (we want the enemy to resume patrolling)
+        if (idleRoutine != null)
+        {
+            StopCoroutine(idleRoutine);
+            idleRoutine = null;
+        }
+
+        chasing = false;
+        walking = true;
+        isIdle = false;
+        ai.isStopped = false;
+        canMove = true;
+        hasDealtDamage = false;
+
+        PickNewDestination();
+
+        Debug.Log("[EnemyAI] stopChase called, now Walking");
     }
 
     // --- Pick Random Destination ---
@@ -208,6 +250,7 @@ public class EnemyAI : MonoBehaviour
     {
         if (destinations == null || destinations.Count == 0) return;
         currentDest = destinations[Random.Range(0, destinations.Count)];
-        ai.destination = currentDest.position;
+        if (ai != null && currentDest != null)
+            ai.destination = currentDest.position;
     }
 }
