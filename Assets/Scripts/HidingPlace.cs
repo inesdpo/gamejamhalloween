@@ -6,8 +6,8 @@ public class HidingPlace : MonoBehaviour
 {
     public GameObject hideText, stopHideText;
     public GameObject normalPlayer, hidingPlayer;
-    public EnemyAI monsterScript;
-    public Transform monsterTransform;
+    //public EnemyAI monsterScript;
+    //public Transform monsterTransform;
     bool interactable, hiding;
     public float loseDistance;
 
@@ -43,14 +43,14 @@ public class HidingPlace : MonoBehaviour
             {
                 hideText.SetActive(false);
                 hidingPlayer.SetActive(true);
-                float distance = Vector3.Distance(monsterTransform.position, normalPlayer.transform.position);
+                /*float distance = Vector3.Distance(monsterTransform.position, normalPlayer.transform.position);
                 if (distance > loseDistance)
                 {
                     if(monsterScript.chasing == true)
                     {
                         monsterScript.stopChase();
                     }
-                }
+                }*/
                 stopHideText.SetActive(true);
                 hiding = true;
                 normalPlayer.SetActive(false);
