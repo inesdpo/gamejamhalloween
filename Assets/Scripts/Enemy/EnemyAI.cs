@@ -38,6 +38,8 @@ public class EnemyAI : MonoBehaviour
     private Coroutine chaseRoutine;
     private Coroutine idleRoutine;
 
+   //[SerializeField] private Animator animator;
+
     void Start()
     {
         if (player != null)
@@ -58,6 +60,8 @@ public class EnemyAI : MonoBehaviour
         {
             // Reset coroutines/states but avoid killing all coroutines (e.g. attack coroutine)
             ResetAllCoroutines();
+
+            //animator.SetBool("Ischasing", true);
 
             chasing = true;
             walking = false;
@@ -83,6 +87,7 @@ public class EnemyAI : MonoBehaviour
         // --- PATROLLING BEHAVIOR ---
         if (walking && canMove)
         {
+            
             ai.speed = walkSpeed;
             if (currentDest != null)
                 ai.destination = currentDest.position;
